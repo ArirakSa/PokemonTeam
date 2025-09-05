@@ -32,6 +32,14 @@
    flutter run -d chrome --web-port=5000
    ```
 
+#### ตัวอย่างหน้าจอ
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/94e47dd1-56f1-4082-af25-c2bad59f2823" width="250"/>
+   &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://github.com/user-attachments/assets/a125430e-f7f3-44ac-b656-111f233be10b" width="250"/>
+</p>
+
 #### เทคโนโลยีที่ใช้
 
 * Flutter

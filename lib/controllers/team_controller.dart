@@ -1,81 +1,146 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import '../models/team.dart';
+import '../models/pokemon.dart';
 import '../services/api_service.dart';
 
 class TeamController extends GetxController {
-  var pokemons =
-      <Map<String, String>>[].obs; // รายชื่อโปเกมอนจาก API [{name, imageUrl}]
+  var teams = <Team>[].obs;
+  var currentTeam = Team(
+    id: DateTime.now().millisecondsSinceEpoch.toString(),
+    name: '',
+    pokemons: [],
+  ).obs; // ทีมปัจจุบันที่กำลังแก้ไข
 
-  var team = <Map<String, String>>[].obs; // ทีมผู้ใช้เลือก (สูงสุด 3 ตัว)
-
-  var teamName = ''.obs; // ชื่อทีม
-
-  var searchQuery = ''.obs; // สำหรับค้นหา (จาก search bar)
+  var pokemons = <Pokemon>[].obs;
+  var searchQuery = ''.obs; // คำค้นหา
 
   final storage = GetStorage(); // เก็บข้อมูลถาวร
-
   final ApiService api = Get.find(); // API service
 
   @override
   void onInit() {
     super.onInit();
-
-    // โหลดชื่อทีมและชื่อจาก GetStorage
-    final storedTeam = storage.read<List>('team') ?? [];
-    team.value = storedTeam.map((e) => Map<String, String>.from(e)).toList();
-    teamName.value = storage.read('teamName') ?? '';
-
-    // เก็บทีมและชื่อลง storage ทุกครั้งที่เปลี่ยน
-    ever(team, (_) => storage.write('team', team.toList()));
-    ever(teamName, (_) => storage.write('teamName', teamName));
-
+    loadTeams();
     loadPokemons();
   }
 
+
+  // ==============================
+  // Pokemon
+  // ==============================
+
   // โหลดโปเกมอนจาก API
   void loadPokemons() async {
-    pokemons.value = await api.fetchPokemons(); // [{name, imageUrl}]
+    pokemons.value = await api.fetchPokemons();
   }
 
-  // เลือก/ยกเลิกโปเกมอน
-  void togglePokemon(String name) {
-    final existing = team.firstWhereOrNull((p) => p["name"] == name);
-
-    if (existing != null) {
-      team.remove(existing); // ยกเลิก
+  // เพิ่มโปเกมอนในทีมปัจจุบัน
+  void addPokemonToCurrentTeam(Pokemon pokemon) {
+    if (currentTeam.value.pokemons.length < 3) {
+      currentTeam.update((team) {
+        team!.pokemons.add(pokemon);
+      });
     } else {
-      if (team.length < 3) {
-        // หาโปเกมอนจาก pokemons
-        final poke = pokemons.firstWhereOrNull((p) => p["name"] == name);
-        if (poke != null) {
-          team.add({"name": poke["name"]!, "imageUrl": poke["imageUrl"]!});
-        }
-      } else {
-        Get.snackbar(
-          "ถึงขีดจำกัด",
-          "คุณสามารถเลือกโปเกมอนได้ไม่เกิน 3 ตัว",
-          duration: const Duration(seconds: 2),
-          backgroundColor: Colors.red.shade700, // 🔴 พื้นหลังแดงเข้ม
-          colorText: Colors.white, // ข้อความสีขาวอ่านง่าย
-          margin: const EdgeInsets.all(12),
-          icon: const Icon(Icons.warning, color: Colors.yellow), // ไอคอนสีขาว
-        );
-      }
+      Get.snackbar(
+        "ถึงขีดจำกัด",
+        "คุณสามารถเลือกโปเกมอนได้ไม่เกิน 3 ตัว",
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.red.shade700,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(12),
+        icon: const Icon(Icons.warning, color: Colors.yellow),
+      );
     }
   }
 
-  // ฟังก์ชันตั้งชื่อทีม
-  void setTeamName(String name) {
-    teamName.value = name;
-    storage.write('teamName', name);
+  // ลบโปเกมอนจากทีมปัจจุบันที่กำลังเลือก
+  void removePokemonFromCurrentTeam(String pokemonId) {
+    currentTeam.update((team) {
+      team!.pokemons.removeWhere((p) => p.id == pokemonId);
+    });
   }
 
-  // รีเซ็ตทีม
-  void resetTeam() {
-    team.clear();
-    teamName.value = '';
-    storage.remove('team');
-    storage.remove('teamName');
+  // ==============================
+  // Team
+  // ==============================
+
+  // โหลดทีมทั้งหมดจาก storage
+  void loadTeams() {
+    final storedTeams = storage.read<List>('teams') ?? [];
+    teams.value = storedTeams
+        .map((e) => Team.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  // บันทึกทีมทั้งหมดลง storage
+  void saveTeams() {
+    storage.write('teams', teams.map((t) => t.toJson()).toList());
+  }
+
+  // ตั้งชื่อทีมปัจจุบัน
+  void updateCurrentTeamName(String name) {
+    currentTeam.update((team) {
+      team!.name = name;
+    });
+  }
+
+  void saveCurrentTeam() {
+    final index = teams.indexWhere((t) => t.id == currentTeam.value.id);
+
+    if (index != -1) {
+      // อัปเดตทีมเดิม
+      teams[index] = Team(
+        id: currentTeam.value.id,
+        name: currentTeam.value.name,
+        pokemons: List<Pokemon>.from(currentTeam.value.pokemons),
+      );
+    } else {
+      // เพิ่มทีมใหม่
+      teams.add(
+        Team(
+          id: currentTeam.value.id,
+          name: currentTeam.value.name,
+          pokemons: List<Pokemon>.from(currentTeam.value.pokemons),
+        ),
+      );
+    }
+
+    saveTeams(); // บันทึกลง storage
+  }
+
+  // สร้างทีมใหม่
+  void createNewTeam() {
+    currentTeam.value = Team(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: '',
+      pokemons: [],
+    );
+  }
+
+  // โหลดทีมมาแก้ไข
+  void loadTeamForEditing(String teamId) {
+    final team = teams.firstWhere((t) => t.id == teamId);
+    currentTeam.value = Team(
+      id: team.id,
+      name: team.name,
+      pokemons: List<Pokemon>.from(team.pokemons), // สร้าง List ใหม่
+    );
+  }
+
+  // ลบทีม
+  void deleteTeam(String teamId) {
+    teams.removeWhere((t) => t.id == teamId);
+    saveTeams();
+  }
+
+  void clearCurrentTeam() {
+    currentTeam.update((team) {
+      if (team != null) {
+        team.name = ''; // รีเซ็ตชื่อเป็นค่าว่าง
+        team.pokemons.clear(); // ลบโปเกมอนทั้งหมด
+      }
+    });
   }
 }

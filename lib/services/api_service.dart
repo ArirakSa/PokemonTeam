@@ -1,22 +1,29 @@
-import 'package:get/get.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../models/pokemon.dart';
 
 class ApiService {
-  final client = GetConnect();
+  Future<List<Pokemon>> fetchPokemons() async {
+    final url = Uri.parse("https://pokeapi.co/api/v2/pokemon?limit=30");
+    final response = await http.get(url);
 
-  // ดึงรายชื่อ Pokémon 27 ตัวแรกจาก PokeAPI
-  Future<List<Map<String, String>>> fetchPokemons() async {
-  final response = await client.get("https://pokeapi.co/api/v2/pokemon?limit=27");
-  if (response.statusCode == 200) {
-    return (response.body['results'] as List).map((p) {
-      final url = p['url'].toString();
-      final id = url.split("/")[6]; // ดึง id จาก url เช่น .../pokemon/1/
-      return {
-        "name": p['name'].toString(),
-        "imageUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png"
-      };
+    if (response.statusCode != 200) {
+      throw Exception("Failed to load pokemons");
+    }
+
+    final data = json.decode(response.body);
+    final results = data["results"] as List;
+
+    return results.map((item) {
+      final urlParts = item["url"].toString().split("/");
+      final id = urlParts[urlParts.length - 2];
+
+      return Pokemon(
+        id: id,
+        name: item["name"],
+        imageUrl:
+            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/$id.png",
+      );
     }).toList();
   }
-  return [];
-}
-
 }

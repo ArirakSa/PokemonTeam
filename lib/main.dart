@@ -30,12 +30,12 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.orange,
         scaffoldBackgroundColor: Colors.grey[50], // พื้นหลังแอป
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.orange, // AppBar
-          foregroundColor: Colors.white, // ตัวหนังสือและไอคอนบน AppBar
+          backgroundColor: Colors.orange, 
+          foregroundColor: Colors.white, 
         ),
         colorScheme: ColorScheme.fromSwatch(
           primarySwatch:
-              Colors.orange, // จะกำหนดสีหลักของ Dialog/TextField focus
+              Colors.orange, 
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Colors.orange), // เวลา focus
           ),
-          prefixIconColor: Colors.orange, // icon
+          prefixIconColor: Colors.orange, 
         ),
       ),
       home: Home(),

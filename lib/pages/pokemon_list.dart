@@ -28,9 +28,9 @@ class PokemonList extends StatelessWidget {
         // แสดงรายการ Pokémon
         Expanded(
           child: Obx(() {
-            // กรองโปเกมอนตาม searchQuery โดย contains = ฟังก์ชันของ String ใน Dart ที่ใช้ค้นหา
+            // กรองโปเกมอนตาม searchQuery
             final filtered = teamCtrl.pokemons.where((p) {
-              final name = p["name"]!.toLowerCase();
+              final name = p.name.toLowerCase(); // ✅ ใช้ p.name แทน p["name"]
               return name.contains(teamCtrl.searchQuery.value);
             }).toList();
             
@@ -45,18 +45,23 @@ class PokemonList extends StatelessWidget {
               itemCount: filtered.length,
               itemBuilder: (context, index) {
                 final pokemon = filtered[index];
-                final name = pokemon["name"]!;
-                final imageUrl = pokemon["imageUrl"]!;
 
                 return Obx(() {
-                  final selected = teamCtrl.team.any((p) => p["name"] == name);
+                  final selected = teamCtrl.currentTeam.value.pokemons
+                      .any((p) => p.id == pokemon.id);
 
                   return GestureDetector(
-                    onTap: () => teamCtrl.togglePokemon(name),
+                    onTap: () {
+                      if (selected) {
+                        teamCtrl.removePokemonFromCurrentTeam(pokemon.id);
+                      } else {
+                        teamCtrl.addPokemonToCurrentTeam(pokemon);
+                      }
+                    },
                     child: AnimatedScale(
-                      scale: selected ? 1.05 : 1.0, // ขยายตอนเลือก
+                      scale: selected ? 1.05 : 1.0,
                       duration: const Duration(milliseconds: 250),
-                      curve: Curves.elasticOut, // เด้งน่ารักๆ
+                      curve: Curves.elasticOut,
                       child: Container(
                         decoration: BoxDecoration(
                           color: selected
@@ -66,7 +71,7 @@ class PokemonList extends StatelessWidget {
                           boxShadow: [
                             if (selected)
                               BoxShadow(
-                                color: Colors.yellow.withValues(alpha: 0.6),
+                                color: Colors.yellow.withAlpha(153), // ✅ แก้เป็น withAlpha
                                 blurRadius: 15,
                                 spreadRadius: 2,
                               ),
@@ -84,7 +89,7 @@ class PokemonList extends StatelessWidget {
                           children: [
                             // รูปโปเกมอน
                             Image.network(
-                              imageUrl,
+                              pokemon.imageUrl, // ✅ ใช้ pokemon.imageUrl
                               height: 120,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
@@ -98,12 +103,12 @@ class PokemonList extends StatelessWidget {
                             // ชื่อโปเกมอน
                             Expanded(
                               child: Text(
-                                name,
+                                pokemon.name, // ✅ ใช้ pokemon.name
                                 style: const TextStyle(fontSize: 16),
                               ),
                             ),
 
-                            // ไอคอนเลือกแบบเปลี่ยนมีแอนิเมชัน
+                            // ไอคอนเลือก
                             Icon(
                               selected
                                   ? Icons.check_circle

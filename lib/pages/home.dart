@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/team_controller.dart';
 import 'pokemon_list.dart';
-import 'team_preview.dart';
+import 'pokemon_preview.dart';
+import 'team_overview.dart';
 
 class Home extends StatelessWidget {
   Home({super.key});
@@ -14,19 +15,21 @@ class Home extends StatelessWidget {
       appBar: AppBar(
         title: Obx(
           () => Text(
-            teamCtrl.teamName.isEmpty
-                ? "Name: Pokémon Team Builder"
-                : "Name: ${teamCtrl.teamName.value}",
+            teamCtrl.currentTeam.value.name.isEmpty
+                ? "สร้างทีมโปเกมอน"
+                : "ทีม: ${teamCtrl.currentTeam.value.name}",
           ),
         ),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
         actions: [
-          // ปุ่มแก้ชื่อทีม
+          // 1. ปุ่มแก้ไขชื่อทีม
           IconButton(
             icon: const Icon(Icons.edit),
             tooltip: "แก้ไขชื่อทีม",
             onPressed: () {
               final controller = TextEditingController(
-                text: teamCtrl.teamName.value,
+                text: teamCtrl.currentTeam.value.name,
               );
               showDialog(
                 context: context,
@@ -45,7 +48,7 @@ class Home extends StatelessWidget {
                     ),
                     ElevatedButton(
                       onPressed: () {
-                        teamCtrl.setTeamName(controller.text);
+                        teamCtrl.updateCurrentTeamName(controller.text);
                         Navigator.pop(context);
                       },
                       child: const Text("บันทึก"),
@@ -56,22 +59,52 @@ class Home extends StatelessWidget {
             },
           ),
 
-          // ปุ่มรีเซ็ตทีม
+          // 2. ปุ่มบันทึกทีม (แสดงเมื่อมีโปเกมอน)
           Obx(
-            () => teamCtrl.team.isEmpty
+            () => teamCtrl.currentTeam.value.pokemons.isEmpty
+                ? const SizedBox.shrink()
+                : IconButton(
+                    icon: const Icon(Icons.save),
+                    tooltip: "บันทึกทีม",
+                    onPressed: () {
+                      teamCtrl.saveCurrentTeam();
+                      
+                      Get.snackbar(
+                        "บันทึกสำเร็จ",
+                        "บันทึกทีม ${teamCtrl.currentTeam.value.name} แล้ว",
+                        duration: const Duration(seconds: 2),
+                        backgroundColor: Colors.green,
+                        margin: const EdgeInsets.all(12),
+                        colorText: Colors.white,
+                      );
+                      teamCtrl.clearCurrentTeam(); // รีเซ็ตหลังจากบันทึก
+                    },
+                  ),
+          ),
+
+          // 3. ปุ่มรีเซ็ตทีม (แสดงเมื่อมีโปเกมอน)
+          Obx(
+            () => teamCtrl.currentTeam.value.pokemons.isEmpty
                 ? const SizedBox.shrink()
                 : IconButton(
                     icon: const Icon(Icons.refresh, color: Colors.red),
                     tooltip: "รีเซ็ตทีม",
-                    onPressed: teamCtrl.resetTeam,
+                    onPressed: teamCtrl.clearCurrentTeam,
                   ),
+          ),
+
+          // 4. ปุ่มดูทีมทั้งหมด
+          IconButton(
+            icon: const Icon(Icons.list),
+            tooltip: "ดูทีมทั้งหมด",
+            onPressed: () => Get.to(() => TeamOverview()),
           ),
         ],
       ),
       body: Column(
         children: const [
-          TeamPreview(),
-          Expanded(child: PokemonList()),
+          TeamPreview(), 
+          Expanded(child: PokemonList()), 
         ],
       ),
     );

@@ -4,6 +4,7 @@ import '../controllers/team_controller.dart';
 
 class TeamPreview extends StatelessWidget {
   const TeamPreview({super.key});
+
   TeamController get teamCtrl => Get.find();
 
   @override
@@ -19,16 +20,15 @@ class TeamPreview extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: Obx(() {
-          if (teamCtrl.team.isEmpty) {
+          if (teamCtrl.currentTeam.value.pokemons.isEmpty) {
             return const Center(child: Text("ยังไม่มี Pokémon ในทีม"));
           }
 
-          // จัด Pokémon ให้อยู่ตรงกลาง
           return Align(
             alignment: Alignment.center,
             child: Row(
-              mainAxisSize: MainAxisSize.min, // Row ขนาดพอดีกับจำนวน Pokémon
-              children: teamCtrl.team.map((poke) {
+              mainAxisSize: MainAxisSize.min,
+              children: teamCtrl.currentTeam.value.pokemons.map((poke) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Stack(
@@ -42,7 +42,7 @@ class TeamPreview extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.yellow.withValues(alpha: 0.6),
+                              color: Colors.yellow.withAlpha(153),
                               blurRadius: 4,
                               spreadRadius: 1,
                               offset: const Offset(0, 2),
@@ -53,19 +53,16 @@ class TeamPreview extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Expanded(
-                              child: (poke["imageUrl"] != null)
-                                  ? Image.network(
-                                      poke["imageUrl"]!,
-                                      fit: BoxFit.contain,
-                                      errorBuilder: (_, __, ___) =>
-                                          const Icon(Icons.error, color: Colors.red),
-                                    )
-                                  : const Icon(Icons.catching_pokemon,
-                                      color: Colors.redAccent),
+                              child: Image.network(
+                                poke.imageUrl,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.error, color: Colors.red),
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              poke["name"] ?? "",
+                              poke.name,
                               textAlign: TextAlign.center,
                               style: const TextStyle(fontSize: 14),
                               overflow: TextOverflow.ellipsis,
@@ -77,8 +74,13 @@ class TeamPreview extends StatelessWidget {
                         top: 6,
                         right: 6,
                         child: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red, size: 20),
-                          onPressed: () => teamCtrl.togglePokemon(poke["name"]!),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                          onPressed: () =>
+                              teamCtrl.removePokemonFromCurrentTeam(poke.id),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           tooltip: "ลบออกจากทีม",
